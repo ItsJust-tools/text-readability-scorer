@@ -1,14 +1,14 @@
 {
-  "name": "percentage-calculator",
-  "version": "1.4.0",
+  "name": "text-readability-scorer",
+  "version": "1.0.0",
   "private": true,
-  "description": "A tap-tempo metronome utility that computes BPM from rhythmic taps and shows beat timing statistics.",
+  "description": "Grades text readability with Flesch Reading Ease, Flesch-Kincaid grade level, Gunning Fog, SMOG and Coleman-Liau indices plus a plain-language summary.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ItsJust-tools/1795287972.git"
+    "url": "git+https://github.com/ItsJust-tools/text-readability-scorer.git"
   },
-  "homepage": "https://github.com/ItsJust-tools/1795287972",
+  "homepage": "https://github.com/ItsJust-tools/text-readability-scorer",
   "workspaces": [
     "packages/*"
   ],

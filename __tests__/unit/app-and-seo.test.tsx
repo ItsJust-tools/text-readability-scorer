@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { generateJsonLd, generateToolMetadata } from '@/lib/seo';
 import toolConfig from '@/tool/tool.config';
 import { getPublicSiteUrl, templateMetadata } from '@/tool/template-metadata';
-import { percentageCalculatorTool } from '@/tool/tool-definition';
+import { textReadabilityScorerTool } from '@/tool/tool-definition';
 import { Canvas } from '@/tool/components/Canvas';
 import { Sidebar } from '@/tool/components/Sidebar';
 import { Toolbar } from '@/tool/components/Toolbar';
@@ -93,43 +93,32 @@ describe('app and seo', () => {
   it('covers tool definition and helper exports', async () => {
     expect(cn('a', undefined, 'b', false, null, 'c')).toBe('a b c');
     expect(getPublicSiteUrl()).toBe('http://localhost:3000');
-    expect(percentageCalculatorTool.name).toBe(toolConfig.name);
+    expect(textReadabilityScorerTool.name).toBe(toolConfig.name);
     expect(
-      percentageCalculatorTool.deserialize({
-        mode: 'change',
-        changeFrom: '80',
-        changeTo: '100',
-        history: [{ text: 'X% of Y: 30', createdAt: '2026-11-21T10:00:00.000Z' }],
+      textReadabilityScorerTool.deserialize({
+        text: 'Hello world. This is fine.',
+        longSentenceThreshold: 30,
+        hardSentenceFlesch: 50,
       })
     ).toEqual({
       success: true,
       data: {
-        mode: 'change',
-        percentageOf: BASE_DEFAULT_STATE.percentageOf,
-        ofBase: BASE_DEFAULT_STATE.ofBase,
-        changeFrom: '80',
-        changeTo: '100',
-        reversePart: BASE_DEFAULT_STATE.reversePart,
-        reversePercent: BASE_DEFAULT_STATE.reversePercent,
-        addSubValue: BASE_DEFAULT_STATE.addSubValue,
-        addSubPercent: BASE_DEFAULT_STATE.addSubPercent,
-        addSubOp: BASE_DEFAULT_STATE.addSubOp,
-        compoundA: BASE_DEFAULT_STATE.compoundA,
-        compoundB: BASE_DEFAULT_STATE.compoundB,
-        history: [{ text: 'X% of Y: 30', createdAt: '2026-11-21T10:00:00.000Z' }],
+        text: 'Hello world. This is fine.',
+        longSentenceThreshold: 30,
+        hardSentenceFlesch: 50,
       },
     });
-    const repaired = percentageCalculatorTool.deserialize({ nope: true });
+    const repaired = textReadabilityScorerTool.deserialize({ nope: true });
     expect(repaired.success).toBe(true);
     if (repaired.success) {
-      expect(repaired.data.mode).toBe(BASE_DEFAULT_STATE.mode);
-      expect(repaired.data.history).toEqual([]);
+      expect(repaired.data.text).toBe(BASE_DEFAULT_STATE.text);
+      expect(repaired.data.longSentenceThreshold).toBe(BASE_DEFAULT_STATE.longSentenceThreshold);
     }
-    expect(
-      percentageCalculatorTool.serialize({ ...BASE_DEFAULT_STATE, changeFrom: '80' })
-    ).toContain('"changeFrom":"80"');
+    expect(textReadabilityScorerTool.serialize({ ...BASE_DEFAULT_STATE, text: 'abc' })).toContain(
+      '"text":"abc"'
+    );
     const exporters =
-      (percentageCalculatorTool as { exporters?: Array<{ loader: ExporterLoader }> }).exporters ??
+      (textReadabilityScorerTool as { exporters?: Array<{ loader: ExporterLoader }> }).exporters ??
       [];
     expect(exporters).toHaveLength(4);
     const first = exporters[0];
@@ -150,15 +139,12 @@ describe('app and seo', () => {
           onCopy={() => {}}
         />
         <Sidebar state={{ ...BASE_DEFAULT_STATE }} onChange={() => {}} />
-        <Canvas
-          state={{ ...BASE_DEFAULT_STATE, mode: 'of', percentageOf: '20', ofBase: '150' }}
-          onChange={() => {}}
-        />
+        <Canvas state={{ ...BASE_DEFAULT_STATE }} onChange={() => {}} />
       </>
     );
 
-    expect(screen.getByTestId('mode-tab-of')).toBeInTheDocument();
-    expect(screen.getByTestId('result-card')).toBeInTheDocument();
-    expect(screen.getByTestId('result-main')).toHaveTextContent('30');
+    expect(screen.getByTestId('text-input')).toBeInTheDocument();
+    expect(screen.getByTestId('summary-card')).toBeInTheDocument();
+    expect(screen.getByTestId('count-words')).toBeInTheDocument();
   });
 });

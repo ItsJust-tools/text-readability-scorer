@@ -53,12 +53,15 @@ Our longitudinal analysis demonstrates statistically significant heterogeneity a
 ];
 
 /** Split text into sentence strings (numbers, abbreviations and hyphens tolerated). */
+const ABBREVIATIONS = /\b(Dr|Mr|Mrs|Ms|Prof|St|jr|sr|vs|etc|approx|Inc|Ltd|Co)\.(?=\s+[A-Z])/g;
+
 export function splitSentences(text: string): string[] {
   const cleaned = text.replace(/\s+/g, ' ').trim();
   if (!cleaned) return [];
-  const parts = cleaned
+  const masked = cleaned.replace(ABBREVIATIONS, '$1\u0001');
+  const parts = masked
     .split(/(?:[.!?]+(?:\s+|$)|\n+)/)
-    .map((s) => s.trim())
+    .map((s) => s.replace(/\u0001/g, '.').trim())
     .filter((s) => s.length > 0);
   return parts.length > 0 ? parts : [cleaned];
 }
@@ -109,14 +112,6 @@ export function splitWords(text: string): string[] {
   return text.match(WORD_RE) ?? [];
 }
 
-function coreSyllables(lower: string): number {
-  const groups = lower.match(/[aeiouy]+/g);
-  let count = groups ? groups.length : 0;
-  // Special geminate rules: -le after a consonant is a counted syllable peak (ta-ble).
-  if (count === 0) count = 1;
-  return count;
-}
-
 /**
  * Count syllables in an English word.
  * Silent e, diphthongs and special suffixes are accounted for.
@@ -136,19 +131,14 @@ export function countSyllables(word: string): number {
   if (count === 0) return 1;
 
   // -le endings following a consonant form their own syllable (candle → 2).
-  if (/(?:[^aeiouy]le)$/.test(cleaned) && cleaned.length > 2) count += 0; // already counted via 'le' vowel group
+  // Syllabic nasal: an m following th/ch plus preceding vowel forms an extra beat (rhythm → 2).
+  if (/(?:th|ch)m$/.test(cleaned) && !/[aeiouy]m$/.test(cleaned) && count === 1) count += 1;
   return count;
 }
 
 /** Count words with three or more syllables, tolerating hyphenated compounds. */
 export function countPolysyllables(words: string[]): number {
-  return words.filter((w) => {
-    if (w.includes('-')) {
-      const parts = w.split('-').filter(Boolean);
-      return parts.reduce((sum, p) => sum + countSyllables(p), 0) >= 3;
-    }
-    return countSyllables(w) >= 3;
-  }).length;
+  return words.filter((w) => countSyllablesInWords([w]) >= 3).length;
 }
 
 export function countSyllablesInWords(words: string[]): number {
@@ -168,13 +158,21 @@ export function countSyllablesInWords(words: string[]): number {
 }
 
 /** Flesch Reading Ease: 206.835 − 1.015 × (words/sentences) − 84.6 × (syllables/words). */
-export function fleschReadingEase(words: number, sentences: number, syllables: number): number | null {
+export function fleschReadingEase(
+  words: number,
+  sentences: number,
+  syllables: number
+): number | null {
   if (sentences <= 0 || words <= 0) return null;
   return 206.835 - 1.015 * (words / sentences) - 84.6 * (syllables / words);
 }
 
 /** Flesch-Kincaid Grade Level. */
-export function fleschKincaidGrade(words: number, sentences: number, syllables: number): number | null {
+export function fleschKincaidGrade(
+  words: number,
+  sentences: number,
+  syllables: number
+): number | null {
   if (sentences <= 0 || words <= 0) return null;
   return 0.39 * (words / sentences) + 11.8 * (syllables / words) - 15.59;
 }
@@ -182,7 +180,7 @@ export function fleschKincaidGrade(words: number, sentences: number, syllables: 
 /** Gunning Fog index (uses polysyllable count). */
 export function gunningFog(words: number, sentences: number, polysyllables: number): number | null {
   if (sentences <= 0 || words <= 0) return null;
-  return 0.4 * ((words / sentences) + 100 * (polysyllables / words));
+  return 0.4 * (words / sentences + 100 * (polysyllables / words));
 }
 
 /** SMOG index (needs at least 3 sentences; falls back gracefully below that). */
@@ -192,7 +190,7 @@ export function smog(polysyllables: number, sentences: number): number | null {
   void effective;
   const capped = sentences >= 3 ? polysyllables * (30 / sentences) : polysyllables;
   const sqrtTerm = sentences >= 3 ? Math.sqrt(capped) : Math.sqrt(Math.max(polysyllables, 0));
-  const base = 1.0430 * sqrtTerm + 3.1291;
+  const base = 1.043 * sqrtTerm + 3.1291;
   return sentences >= 30 ? base + 3.1291 : base;
 }
 
@@ -235,7 +233,11 @@ export function gradeSummary(grade: number | null): string {
 }
 
 /** Full analysis of the current text state. */
-export function analyzeText(text: string, longSentenceThreshold: number, hardSentenceFlesch: number): Analysis {
+export function analyzeText(
+  text: string,
+  longSentenceThreshold: number,
+  hardSentenceFlesch: number
+): Analysis {
   const wordTokens = splitWords(text);
   const sentenceTokens = splitSentences(text);
   const letters = text.replace(/[^A-Za-z]/g, '').length;
@@ -318,7 +320,15 @@ export function analyzeText(text: string, longSentenceThreshold: number, hardSen
 
   const summary = buildSummary(scores, counts, fleschBand, gradeLabel);
 
-  return { counts, scores, sentences, hardestSentenceIndex, summary, hints, flaggedCount: flagged.length } as Analysis & { flaggedCount: number };
+  return {
+    counts,
+    scores,
+    sentences,
+    hardestSentenceIndex,
+    summary,
+    hints,
+    flaggedCount: flagged.length,
+  } as Analysis & { flaggedCount: number };
 }
 
 function buildSummary(

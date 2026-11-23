@@ -10,7 +10,9 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ state, onChange }) => {
-  const words = state.text.trim() ? state.text.match(/[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*/g)?.length ?? 0 : 0;
+  const words = state.text.trim()
+    ? (state.text.match(/[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*/g)?.length ?? 0)
+    : 0;
   return (
     <div className="p-4 space-y-6 text-sm overflow-y-auto h-full" data-testid="readability-sidebar">
       <div>

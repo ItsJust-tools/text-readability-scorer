@@ -81,19 +81,17 @@ export const Canvas: React.FC<CanvasProps> = ({ state, onChange }) => {
   const analysis = useDebouncedAnalysis(state);
   const { counts, scores, sentences, summary, hints } = analysis;
 
-  const ease =
-    scores.fleschReadingEase === null
-      ? '—'
-      : `${scores.fleschReadingEase.toFixed(1)}`;
+  const ease = scores.fleschReadingEase === null ? '—' : `${scores.fleschReadingEase.toFixed(1)}`;
   const easeBand =
-    scores.fleschReadingEase === null
-      ? 'No text'
-      : fleschBandLabel(scores.fleschReadingEase);
+    scores.fleschReadingEase === null ? 'No text' : fleschBandLabel(scores.fleschReadingEase);
 
   const handleDownload = React.useCallback(() => {
     downloadText(
       'readability-report.txt',
-      buildTextReport(analyzeText(state.text, state.longSentenceThreshold, state.hardSentenceFlesch), state.text)
+      buildTextReport(
+        analyzeText(state.text, state.longSentenceThreshold, state.hardSentenceFlesch),
+        state.text
+      )
     );
   }, [state.text, state.longSentenceThreshold, state.hardSentenceFlesch]);
 
@@ -170,12 +168,7 @@ export const Canvas: React.FC<CanvasProps> = ({ state, onChange }) => {
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2">
-        <ScoreCard
-          label="Flesch Reading Ease"
-          value={ease}
-          hint={easeBand}
-          testid="score-flesch"
-        />
+        <ScoreCard label="Flesch Reading Ease" value={ease} hint={easeBand} testid="score-flesch" />
         <ScoreCard
           label="Flesch-Kincaid Grade"
           value={fmtGrade(scores.fleschKincaidGrade)}
@@ -206,7 +199,10 @@ export const Canvas: React.FC<CanvasProps> = ({ state, onChange }) => {
         <p className="text-sm text-gray-800 dark:text-gray-100" data-testid="summary-text">
           {summary}
         </p>
-        <ul className="mt-2 space-y-1 text-xs text-gray-700 dark:text-gray-300" data-testid="hints-list">
+        <ul
+          className="mt-2 space-y-1 text-xs text-gray-700 dark:text-gray-300"
+          data-testid="hints-list"
+        >
           {hints.map((hint, i) => (
             <li key={i}>• {hint}</li>
           ))}
@@ -225,11 +221,21 @@ export const Canvas: React.FC<CanvasProps> = ({ state, onChange }) => {
           <table className="w-full text-left text-xs" data-testid="sentence-table">
             <thead>
               <tr className="text-gray-500 dark:text-gray-400">
-                <th scope="col" className="py-1 pr-2">#</th>
-                <th scope="col" className="py-1 pr-2">Sentence</th>
-                <th scope="col" className="py-1 pr-2">Words</th>
-                <th scope="col" className="py-1 pr-2">Grade</th>
-                <th scope="col" className="py-1">Flag</th>
+                <th scope="col" className="py-1 pr-2">
+                  #
+                </th>
+                <th scope="col" className="py-1 pr-2">
+                  Sentence
+                </th>
+                <th scope="col" className="py-1 pr-2">
+                  Words
+                </th>
+                <th scope="col" className="py-1 pr-2">
+                  Grade
+                </th>
+                <th scope="col" className="py-1">
+                  Flag
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -238,11 +244,7 @@ export const Canvas: React.FC<CanvasProps> = ({ state, onChange }) => {
                   key={s.index}
                   data-flagged={s.flagged ? 'true' : 'false'}
                   data-testid={`sentence-row-${s.index}`}
-                  className={
-                    s.flagged
-                      ? 'bg-amber-50 dark:bg-amber-900/20'
-                      : 'bg-transparent'
-                  }
+                  className={s.flagged ? 'bg-amber-50 dark:bg-amber-900/20' : 'bg-transparent'}
                 >
                   <td className="py-1 pr-2 font-mono">{s.index + 1}</td>
                   <td className="py-1 pr-2 max-w-xs truncate">{s.text}</td>

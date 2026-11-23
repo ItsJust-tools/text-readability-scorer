@@ -39,21 +39,10 @@ vi.mock('@itsjust/core', () => ({
   useTool: () => ({
     state: {
       data: {
-        mode: 'of',
-        percentageOf: '20',
-        ofBase: '150',
-        changeFrom: '80',
-        changeTo: '100',
-        reversePart: '30',
-        reversePercent: '15',
-        addSubValue: '250',
-        addSubPercent: '20',
-        addSubOp: 'add',
-        compoundA: '20',
-        compoundB: '30',
-        history: [],
+        text: 'Hello world. This is fine.',
+        longSentenceThreshold: 22,
+        hardSentenceFlesch: 60,
       },
-      setData: mockSetData,
       isDirty: false,
       lastSaved: 'just now',
     },
@@ -68,42 +57,48 @@ vi.mock('@itsjust/core', () => ({
 
 vi.mock('@/tool', () => ({
   toolConfig: {
-    id: '1795287972',
-    name: 'Percentage Calculator',
+    id: 'text-readability-scorer',
+    name: 'Text Readability Scorer',
     version: '1.0.0',
     features: { sidebar: true },
-    theme: { brand: 'Percentage Calculator' },
+    theme: { brand: 'Text Readability Scorer' },
   },
   templateBaseVersion: '1.1.0',
-  Canvas: ({ state }: { state: Record<string, unknown> }) => <div>canvas:{String(state.mode)}</div>,
+  Canvas: () => <div>canvas</div>,
   Toolbar: () => <div>toolbar</div>,
   Sidebar: () => <div>sidebar</div>,
-  summaryText: () => 'summary',
 }));
 
 vi.mock('@/tool/tool-definition', () => ({
-  percentageCalculatorTool: {
+  textReadabilityScorerTool: {
     serialize: (state: unknown) => JSON.stringify(state),
     deserialize: () => ({
       success: true,
       data: {
-        mode: 'of',
-        percentageOf: '20',
-        ofBase: '150',
-        changeFrom: '80',
-        changeTo: '100',
-        reversePart: '30',
-        reversePercent: '15',
-        addSubValue: '250',
-        addSubPercent: '20',
-        addSubOp: 'add',
-        compoundA: '20',
-        compoundB: '30',
-        history: [],
+        text: 'Hello world. This is fine.',
+        longSentenceThreshold: 22,
+        hardSentenceFlesch: 60,
       },
     }),
   },
 }));
+
+vi.mock('@/tool/types', async (importOriginal) => {
+  const actual = (await importOriginal()) as Record<string, unknown>;
+  return {
+    ...actual,
+    analyzeText: () => ({
+      counts: {},
+      scores: {},
+      sentences: [],
+      hardestSentenceIndex: null,
+      summary: 'summary',
+      hints: [],
+    }),
+    buildMarkdownReport: () => '# report',
+    SAMPLE_SOURCE_NEWS: 'sample',
+  };
+});
 
 describe('app client and help page', () => {
   beforeEach(() => {

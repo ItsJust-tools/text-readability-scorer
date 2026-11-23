@@ -12,12 +12,7 @@ import { ToolShell, useTool, ImportExport } from '@itsjust/core';
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
 import { toolConfig, templateBaseVersion, Canvas, Toolbar, Sidebar } from '@/tool';
 import { textReadabilityScorerTool, serializeState } from '@/tool/tool-definition';
-import {
-  analyzeText,
-  buildMarkdownReport,
-  SAMPLE_SOURCE_NEWS,
-  type ToolState,
-} from '@/tool/types';
+import { analyzeText, buildMarkdownReport, SAMPLE_SOURCE_NEWS, type ToolState } from '@/tool/types';
 
 export default function ToolClient() {
   const ToolShellCompat = ToolShell as unknown as ComponentType<Record<string, unknown>> & {
@@ -40,13 +35,6 @@ export default function ToolClient() {
   const title = toolConfig.name;
   const state = tool.state.data;
 
-  const handleStateChange = useCallback(
-    (updater: (prev: ToolState) => ToolState) => {
-      setToolData(updater);
-    },
-    [setToolData]
-  );
-
   useEffect(() => {
     if (hasLoadedSharedState.current) return;
     hasLoadedSharedState.current = true;
@@ -68,7 +56,11 @@ export default function ToolClient() {
   }, [setToolData, showToast]);
 
   const buildReport = useCallback(
-    () => buildMarkdownReport(analyzeText(state.text, state.longSentenceThreshold, state.hardSentenceFlesch), state.text),
+    () =>
+      buildMarkdownReport(
+        analyzeText(state.text, state.longSentenceThreshold, state.hardSentenceFlesch),
+        state.text
+      ),
     [state.text, state.longSentenceThreshold, state.hardSentenceFlesch]
   );
 
@@ -81,24 +73,6 @@ export default function ToolClient() {
       showToast(message, 'error');
     }
   }, [showToast, buildReport, title]);
-
-  const handleDownloadReport = useCallback(async () => {
-    try {
-      const blob = new Blob([buildReport()], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'readability-report.txt';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      showToast('Report downloaded', 'success');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to download report';
-      showToast(message, 'error');
-    }
-  }, [buildReport, showToast]);
 
   const handleShare = useCallback(async () => {
     setIsSharing(true);
